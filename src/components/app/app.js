@@ -1,34 +1,118 @@
+import { Component } from 'react'
+
 import Info from '../info/info'
 import Search from '../search/search'
 import Filter from '../filter/filter'
 import EmployeesList from '../employees-list/employees-list'
 import AddEmployees from '../add-emloyees/add-emloyees'
-import '../search/search.css'
 
 import './app.css'
 
-function App() {
+class App extends Component {
+    constructor(props) {
+        super(props);
+        this.state = {
+            data: [
+                {name: 'John C.', salary: 800, increase: false, rise: false, id: 1},
+                {name: 'Alex M.', salary: 3000, increase: false, rise: false, id: 2},
+                {name: 'Carl W.', salary: 4000, increase: false, rise: false, id: 3}
+            ],
+            term: '',
+            filter: 'all'
+        }
+        this.maxId = 4;
+    }
 
-    const data = [
-        {name: 'John C.', salary: 800, increase: false, id: 1},
-        {name: 'Alex M.', salary: 3000, increase: false, id: 2},
-        {name: 'Carl W.', salary: 4000, increase: false, id: 3}
-    ]
+    deleteItem = (id) => {
+        this.setState(({data}) => {
+            return {
+                data: data.filter(item => item.id !== id)
+            }
+        })
+    }
 
-    return (
-        <div className="app">
-            <Info />
+    addItem = (name, salary) => {
+        const newItem = {
+            name,
+            salary,
+            increase: false,
+            rise: false,
+            id: this.maxId++
+        }
+        this.setState(({data}) => {
+            return {
+                data: [...data, newItem]
+            }
+        })
+    }
 
-            <div className='search-filter'>
-                <Search />
-                <Filter />
+    onToggleProp = (id, prop) => {
+        this.setState(({data}) => ({
+            data: data.map(item => {
+                if (item.id === id) {
+                    return {...item, [prop]: !item[prop]}
+                }
+                return item;
+            })
+        }))
+    }
+
+    searchEmp = (items, term) => {
+        if (term.length === 0) {
+            return items;
+        }
+
+        return items.filter(item => {
+            return item.name.indexOf(term) > -1
+        })
+    }
+
+    onUpdateSearch = (term) => {
+        this.setState({term});
+    }
+
+    filterPost = (items, filter) => {
+        switch (filter) {
+            case 'rise':
+                return items.filter(item => item.rise);
+            case 'moreThen1000':
+                return items.filter(item => item.salary > 1000);
+            default:
+                return items
+        }
+    }
+
+    onFilterSelect = (filter) => {
+        this.setState({filter});
+    }
+
+    render() {
+        const {data, term, filter} = this.state;
+        const employees = this.state.data.length;
+        const increased = this.state.data.filter(item => item.increase).length;
+        const visibleData = this.filterPost(this.searchEmp(data, term), filter);
+
+        return (
+            <div className="app">
+                <Info employees={employees}
+                      increased={increased}/>
+    
+                <div className='search-filter'>
+                    <Search onUpdateSearch={this.onUpdateSearch}/>
+                    <Filter filter={filter} onFilterSelect={this.onFilterSelect}/>
+                </div>
+    
+                <EmployeesList
+                    data={visibleData}
+                    onDelete={this.deleteItem}
+                    onToggleProp={this.onToggleProp}/>
+    
+                <AddEmployees onAdd={this.addItem}/>
             </div>
+        )
+    }
 
-            <EmployeesList data={data} />
-
-            <AddEmployees />
-        </div>
-    )
+    
 }
 
 export default App
